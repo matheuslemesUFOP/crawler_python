@@ -193,33 +193,25 @@ class Crawler:
 
     def _get_rows_per_page(self, html: str) -> int:
         """
-        Extract rows-per-page value from the menu button (e.g. 25).
-        Button has menuBtn class, aria-label/title with the number and a span with the text.
+        Extract rows-per-page from the same div as _get_total_rows.
+        Text format is '1-25 of 2237'; returns the number after the hyphen (e.g. 25).
         Returns 0 if not found or parse fails.
         """
         soup = BeautifulSoup(html, "html.parser")
-        btn = soup.find(
-            "button",
-            class_=lambda c: c and "menuBtn" in (c or "") and "rightAlign" in (c or "")
-        )
-        if not btn:
-            btn = soup.find("button", attrs={"aria-label": True, "title": True})
-        if not btn:
+        div_total = soup.find("div", class_="total yf-c259ju")
+        if not div_total:
             return 0
-        for attr in ("aria-label", "title"):
-            val = btn.get(attr)
-            if val:
-                try:
-                    return int(str(val).strip())
-                except ValueError:
-                    pass
-        span = btn.find("span", class_=lambda c: c and "textSelect" in (c or ""))
-        if span:
-            try:
-                return int(span.get_text(strip=True))
-            except ValueError:
-                pass
-        return 0
+        text = div_total.get_text(strip=True) or ""
+        if " of " not in text:
+            return 0
+        try:
+            # "1-25 of 2237" -> "1-25" -> "25"
+            range_part = text.split(" of ")[0].strip()
+            if "-" not in range_part:
+                return 0
+            return int(range_part.split("-")[-1].strip())
+        except (ValueError, IndexError):
+            return 0
 
     def _parse_table_rows(self, rows_html: List[Tag]) -> list[dict]:
         """
