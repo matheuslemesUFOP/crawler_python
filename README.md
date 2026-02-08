@@ -166,6 +166,42 @@ poetry config keyring.enabled false
 
 ---
 
+## Rodando os testes
+
+O projeto usa **pytest** para testes unitários. As dependências de teste (pytest, pytest-cov) são instaladas com `poetry install`.
+
+**Executar os testes (modo verboso):**
+
+```bash
+make test
+```
+
+Ou diretamente com Poetry:
+
+```bash
+poetry run pytest tests/ -v
+```
+
+**Executar os testes com relatório de cobertura (porcentagem e linhas não cobertas):**
+
+```bash
+make test-cov
+```
+
+Ou:
+
+```bash
+poetry run pytest tests/ -v --cov=crawler --cov=main --cov-report=term-missing
+```
+
+Para gerar um relatório de cobertura em HTML (abrir `htmlcov/index.html` no navegador):
+
+```bash
+poetry run pytest tests/ --cov=crawler --cov=main --cov-report=html
+```
+
+---
+
 ## Dependências principais
 
 - **Selenium** — automação de navegador para páginas dinâmicas

@@ -15,6 +15,21 @@ python-dotenv = "^1.0"
 tqdm = "^4.65"
 
 [tool.poetry.group.dev.dependencies]
+pytest = "^8.0"
+pytest-cov = "^4.0"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+
+[tool.coverage.run]
+source = ["crawler", "main.py"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = ["pragma: no cover", "def __repr__", "raise NotImplementedError"]
 
 [build-system]
 requires = ["poetry-core"]
