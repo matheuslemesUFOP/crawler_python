@@ -36,16 +36,6 @@ class Crawler:
             self._driver = webdriver.Chrome(options=options)
         return self._driver
 
-    def _accept_cookies_if_present(self, driver: webdriver.Chrome) -> None:
-        """Click cookie consent button so the page can load (e.g. Yahoo Finance)."""
-        try:
-            accept = WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable((By.XPATH, "//button[contains(., 'Accept') or contains(., 'Accept all')]"))
-            )
-            accept.click()
-        except Exception:
-            pass
-
     def _click_region_menu_button(self, driver: webdriver.Chrome, timeout: int = 10) -> None:
         """
         Clica no botão 'Region' (menuBtn) que abre o dropdown de filtro de região.
@@ -148,141 +138,6 @@ class Crawler:
                 time.sleep(2)
             except Exception:
                 pass
-
-    def _apply_region_filter_on_yahoo(self, driver: webdriver.Chrome, region: str, timeout: int = 15) -> None:
-        """
-        Apply Region filter on Yahoo Finance screener: click the Region filter chip
-        (div.filter.yf-qonzlw with "Region"), then in the modal search and select the region, Apply.
-        """
-        wait = WebDriverWait(driver, timeout)
-        try:
-            # Click the Region filter chip: div.filter that contains a div with text "Region"
-            region_filter_chip = wait.until(
-                EC.element_to_be_clickable((
-                    By.XPATH,
-                    "//div[contains(@class, 'filter') and contains(@class, 'yf-') and .//div[text()='Region']]"
-                ))
-            )
-            region_filter_chip.click()
-        except Exception:
-            try:
-                region_filter_chip = driver.find_element(
-                    By.XPATH,
-                    "//div[contains(@class, 'filter')][.//div[text()='Region']]"
-                )
-                region_filter_chip.click()
-            except Exception:
-                return
-
-        try:
-            wait.until(EC.visibility_of_element_located((
-                By.XPATH,
-                "//input[contains(@placeholder, 'Search') or @placeholder='Search...']"
-            )))
-        except Exception:
-            pass
-
-        try:
-            # Right panel: focus Search input (placeholder "Search...") and type region
-            search_input = wait.until(
-                EC.presence_of_element_located((
-                    By.XPATH,
-                    "//input[contains(@placeholder, 'Search') or @placeholder='Search...']"
-                ))
-            )
-            search_input.clear()
-            search_input.send_keys(region)
-            time.sleep(0.5)
-        except Exception:
-            return
-
-        try:
-            # Select the region from the list (click element that shows the region name, e.g. "Brazil")
-            region_item = wait.until(
-                EC.element_to_be_clickable((By.XPATH, f"//*[normalize-space(text())='{region}']"))
-            )
-            region_item.click()
-        except Exception:
-            try:
-                region_item = driver.find_element(By.XPATH, f"//*[contains(text(), '{region}')]")
-                region_item.click()
-            except Exception:
-                pass
-
-        try:
-            apply_btn = wait.until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "button[aria-label='Apply']"))
-            )
-            apply_btn.click()
-            time.sleep(2)
-        except Exception:
-            try:
-                apply_btn = driver.find_element(
-                    By.XPATH,
-                    "//button[contains(@class,'primary-btn') and @aria-label='Apply']"
-                )
-                apply_btn.click()
-                time.sleep(2)
-            except Exception:
-                pass
-
-    def _wait_for_table(self, driver: webdriver.Chrome, timeout: int = 25) -> None:
-        """Wait until the data table is present (e.g. div.table-container table tbody tr)."""
-        WebDriverWait(driver, timeout).until(
-            EC.presence_of_all_elements_located(
-                (By.CSS_SELECTOR, "div.table-container table tbody tr")
-            )
-        )
-
-    def _get_cell_by_testid(self, row: Tag, testid: str) -> str:
-        """Get text from a td with data-testid-cell equal to testid (or containing it)."""
-        cell = row.find("td", attrs={"data-testid-cell": testid})
-        if not cell:
-            cell = row.find("td", attrs={"data-testid-cell": lambda v: v and testid in (v or "")})
-        return (cell.get_text(strip=True) or "").strip() if cell else ""
-
-    def _extract_from_yahoo_table(self, soup: BeautifulSoup, region: str) -> list[dict]:
-        """
-        Extract symbol, name, price from Yahoo Finance screener table.
-        Table is inside div.table-container with table.bd; cells use data-testid-cell.
-        """
-        rows: list[dict] = []
-        container = soup.find("div", class_=lambda c: c and "table-container" in (c or ""))
-        if not container:
-            return rows
-        table = container.find("table")
-        if not table:
-            return rows
-        tbody = table.find("tbody")
-        data_rows = tbody.find_all("tr") if tbody else table.find_all("tr")[1:]
-        for tr in data_rows:
-            symbol = self._get_cell_by_testid(tr, "ticker")
-            name = self._get_cell_by_testid(tr, "companyshortname.raw")
-            price = self._get_cell_by_testid(tr, "intradayprice")
-            if not symbol and not name:
-                continue
-            region_cell = self._get_cell_by_testid(tr, "region") or ""
-            region_match = not region_cell or region.lower() in region_cell.lower()
-            if region_match:
-                rows.append({"symbol": symbol, "name": name, "price": price})
-        return rows
-
-    def _find_column_indices(self, headers: list[str]) -> Optional[tuple[int, int, int, Optional[int]]]:
-        """Return (symbol_idx, name_idx, price_idx, region_idx) or None if required columns not found."""
-        headers_lower = [h.lower() for h in headers]
-        symbol_idx = next((i for i, h in enumerate(headers_lower) if "symbol" in h), None)
-        name_idx = next(
-            (i for i, h in enumerate(headers_lower) if h == "name" or (h and "name" in h and "change" not in h and "52" not in h)),
-            None,
-        )
-        price_idx = next(
-            (i for i, h in enumerate(headers_lower) if "price" in h and "change" not in h),
-            None,
-        )
-        region_idx = next((i for i, h in enumerate(headers_lower) if "region" in h), None)
-        if symbol_idx is None or name_idx is None or price_idx is None:
-            return None
-        return (symbol_idx, name_idx, price_idx, region_idx)
 
     def _parse_price(self, price_str: str) -> float:
         """
@@ -405,8 +260,6 @@ class Crawler:
         """
         driver = self._get_driver()
         driver.get(url)
-        # self._accept_cookies_if_present(driver)
-        # self._wait_for_table(driver)
 
         # Clicar no botão "Region" (menuBtn) para abrir o menu/dropdown
         self._click_region_menu_button(driver)
@@ -414,9 +267,6 @@ class Crawler:
         # Selecionar a região na lista de opções (div.options) e clicar em Apply
         self._select_region_from_options_and_apply(driver, region)
 
-        # self._apply_region_filter_on_yahoo(driver, region)
-        # time.sleep(2)
-        # self._wait_for_table(driver)
         html = driver.page_source
         total_rows = self._get_total_rows(html)
         rows_per_page = self._get_rows_per_page(html)

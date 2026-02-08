@@ -125,14 +125,40 @@ poetry config keyring.enabled false
    poetry install
    ```
 
-3. **Ative o ambiente (opcional) e execute seus scripts:**
+3. **Configure a URL e a região (evita valores fixos no código):**
+
+   Copie o arquivo de exemplo e edite com seus valores:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   No `.env` você define:
+   - `CRAWLER_URL` — página a ser crawleada (ex.: [Yahoo Finance Equity Screener](https://finance.yahoo.com/research-hub/screener/equity/))
+   - `CRAWLER_REGION` — filtro de região (ex.: `US`)
+   - `CRAWLER_OUTPUT` — (opcional) arquivo CSV de saída (padrão: `output.csv`)
+
+4. **Execute o crawler pelo `main` na raiz:**
+
+   ```bash
+   poetry run python main.py
+   ```
+
+   Ou use o Makefile:
+
+   ```bash
+   make run    # executa o crawler
+   make debug  # executa em modo debug (pdb)
+   ```
+
+   Ou com o shell ativado:
 
    ```bash
    poetry shell
-   python seu_script.py
+   python main.py
    ```
 
-   Ou sem ativar o shell:
+   Para outros scripts:
 
    ```bash
    poetry run python seu_script.py
@@ -145,5 +171,6 @@ poetry config keyring.enabled false
 - **Selenium** — automação de navegador para páginas dinâmicas
 - **Beautiful Soup** — parsing de HTML/XML
 - **Pandas** — manipulação e análise de dados
+- **python-dotenv** — carrega variáveis de ambiente a partir de `.env` (URL e região não ficam no código)
 
 Todas estão declaradas no `pyproject.toml` e são instaladas com `poetry install`.

@@ -41,7 +41,7 @@ class Application:
 
     def run(self) -> None:
         """Run the crawler and export results to CSV."""
-        with Crawler(headless=True) as crawler:
+        with Crawler(headless=False) as crawler:
             df = crawler.extract(self._url, self._region)
             path = crawler.export_csv(df, self._output_path)
             print(f"Extracted {len(df)} record(s). Exported to: {path}")
