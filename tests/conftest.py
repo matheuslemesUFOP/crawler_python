@@ -39,17 +39,6 @@ def html_total_only():
 
 
 @pytest.fixture
-def html_rows_per_page_button():
-    """HTML with the rows-per-page menu button (aria-label/title)."""
-    return '''
-    <button class="tertiary-btn fin-size-small menuBtn rounded rightAlign yf-r7dg9i"
-            aria-label="25" title="25">
-        <span class="textSelect yf-1ec6179">25</span>
-    </button>
-    '''
-
-
-@pytest.fixture
 def html_empty():
     """Empty/minimal HTML."""
     return "<html><body></body></html>"

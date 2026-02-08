@@ -69,14 +69,12 @@ class TestGetTotalRows:
 
 
 class TestGetRowsPerPage:
-    """Tests for _get_rows_per_page."""
+    """Tests for _get_rows_per_page (same div as _get_total_rows, format '1-25 of 2237')."""
 
-    def test_extracts_from_aria_label(
-        self, crawler: Crawler, html_rows_per_page_button: str
-    ) -> None:
-        assert crawler._get_rows_per_page(html_rows_per_page_button) == 25
+    def test_extracts_from_total_div(self, crawler: Crawler, html_total_only: str) -> None:
+        assert crawler._get_rows_per_page(html_total_only) == 25
 
-    def test_returns_zero_when_no_button(self, crawler: Crawler, html_empty: str) -> None:
+    def test_returns_zero_when_no_div(self, crawler: Crawler, html_empty: str) -> None:
         assert crawler._get_rows_per_page(html_empty) == 0
 
 
