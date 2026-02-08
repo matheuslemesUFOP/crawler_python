@@ -12,6 +12,7 @@ selenium = "^4.27"
 beautifulsoup4 = "^4.12"
 pandas = "^2.2"
 python-dotenv = "^1.0"
+tqdm = "^4.65"
 
 [tool.poetry.group.dev.dependencies]
 

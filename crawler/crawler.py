@@ -1,3 +1,4 @@
+import logging
 import time
 from pathlib import Path
 from typing import List, Optional
@@ -9,6 +10,9 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from tqdm import tqdm
+
+logger = logging.getLogger(__name__)
 
 
 class Crawler:
@@ -284,7 +288,10 @@ class Crawler:
             DataFrame with columns: symbol, name, price (data filtered by region).
         """
         driver = self._get_driver()
+        logger.info("Opening URL: %s", url)
         driver.get(url)
+
+        logger.info("Applying region filter: %s", region)
         self.filter_region(driver, region)
 
         html = driver.page_source
@@ -293,19 +300,36 @@ class Crawler:
         rows: list[dict] = []
         page = 0
 
-        while True:
-            rows_html = self._get_table_rows(html)
-            if not rows_per_page:
-                rows_per_page = len(rows_html)
-            if rows_per_page == 0:
-                break
-            rows.extend(self._parse_table_rows(rows_html))
-            if self.is_last_page(page, total_rows, rows_per_page):
-                break
-            self.click_next_page(driver)
-            html = driver.page_source
-            page += 1
+        # total_pages may be 0 if rows_per_page not found in HTML; will be set from first batch
+        total_pages = ((total_rows + rows_per_page - 1) // rows_per_page) if rows_per_page else 0
+        logger.info("Total rows: %d, rows per page: %d, pages: %d", total_rows, rows_per_page, total_pages)
 
+        # Use at least 1 so the bar has a valid total (avoids 0/0); update when rows_per_page is known
+        with tqdm(
+            total=total_pages or 1,
+            unit="page",
+            desc="Reading pages",
+            bar_format="{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}] {postfix}",
+        ) as pbar:
+            while True:
+                rows_html = self._get_table_rows(html)
+                if not rows_per_page:
+                    rows_per_page = len(rows_html)
+                if rows_per_page == 0:
+                    break
+                # Fix total when it was 0 (get_rows_per_page failed) and we now have rows_per_page
+                if pbar.total == 1 and total_rows > 0 and rows_per_page > 0:
+                    pbar.total = (total_rows + rows_per_page - 1) // rows_per_page
+                rows.extend(self._parse_table_rows(rows_html))
+                pbar.set_postfix(rows=len(rows))
+                pbar.update(1)
+                if self.is_last_page(page, total_rows, rows_per_page):
+                    break
+                self.click_next_page(driver)
+                html = driver.page_source
+                page += 1
+
+        logger.info("Extracted %d rows", len(rows))
         df = pd.DataFrame(rows, columns=["symbol", "name", "price"])
         return df
 
@@ -323,6 +347,7 @@ class Crawler:
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
         df.to_csv(path, index=False, encoding="utf-8-sig")
+        logger.info("Exported %d rows to %s", len(df), path)
         return path
 
     def close(self) -> None:

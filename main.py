@@ -5,12 +5,19 @@ Configuration is read from environment variables (e.g. via .env file).
 See .env.example for required variables.
 """
 
+import logging
 import os
 import sys
 
 from dotenv import load_dotenv
 
 from crawler import Crawler
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 
 class Application:
@@ -41,7 +48,9 @@ class Application:
 
     def run(self) -> None:
         """Run the crawler and export results to CSV."""
-        with Crawler(headless=False) as crawler:
+        logger = logging.getLogger(__name__)
+        logger.info("Starting crawler for region=%s, output=%s", self._region, self._output_path)
+        with Crawler(headless=True) as crawler:
             df = crawler.extract(self._url, self._region)
             path = crawler.export_csv(df, self._output_path)
             print(f"Extracted {len(df)} record(s). Exported to: {path}")
