@@ -80,13 +80,15 @@ pipx install poetry --python python3.11
 
 ### Configurar o Poetry
 
-Definir o interpretador Python do projeto (opcional, se tiver várias versões):
+**Definir Python 3.11 como padrão do projeto**
+
+O projeto está configurado para usar Python 3.11. Para garantir que o ambiente virtual use essa versão (recomendado após clonar ou ao ter várias versões instaladas):
 
 ```bash
 poetry env use python3.11
-# ou
-poetry env use python3.12
 ```
+
+Esse comando define o interpretador padrão do projeto e recria o ambiente virtual com Python 3.11, se necessário. Em seguida, rode `poetry install` para instalar as dependências.
 
 Configurações úteis (opcionais):
 
