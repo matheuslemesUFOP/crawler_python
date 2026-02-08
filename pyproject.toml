@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "crawler-python"
+version = "0.1.0"
+description = "Crawler em Python com Selenium, Beautiful Soup e Pandas"
+authors = ["Lemes"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+selenium = "^4.27"
+beautifulsoup4 = "^4.12"
+pandas = "^2.2"
+
+[tool.poetry.group.dev.dependencies]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
