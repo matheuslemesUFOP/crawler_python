@@ -38,8 +38,8 @@ class Crawler:
 
     def _click_region_menu_button(self, driver: webdriver.Chrome, timeout: int = 10) -> None:
         """
-        Clica no botão 'Region' (menuBtn) que abre o dropdown de filtro de região.
-        Usa o botão com classe menuBtn que contém o texto 'Region'.
+        Click the 'Region' (menuBtn) button that opens the region filter dropdown.
+        Uses the button with menuBtn class that contains the text 'Region'.
         """
         wait = WebDriverWait(driver, timeout)
         try:
@@ -53,7 +53,7 @@ class Crawler:
             time.sleep(1)
         except Exception:
             try:
-                # Alternativa: pelo atributo data-ylk que contém 'Region'
+                # Fallback: by data-ylk attribute containing 'Region'
                 region_btn = driver.find_element(
                     By.CSS_SELECTOR,
                     "button.menuBtn[data-ylk*='Region']"
@@ -65,8 +65,8 @@ class Crawler:
 
     def _select_region_from_options_and_apply(self, driver: webdriver.Chrome, region: str, timeout: int = 10) -> None:
         """
-        Dentro do menu Region, garante que só a região desejada esteja selecionada:
-        desmarca todas as opções, marca apenas a região informada e clica em Apply.
+        Within the Region menu, ensure only the desired region is selected:
+        uncheck all options, check only the given region, and click Apply.
         """
         wait = WebDriverWait(driver, timeout)
         try:
@@ -79,7 +79,7 @@ class Crawler:
         except Exception:
             pass
 
-        # Desmarcar todas as regiões já selecionadas (garantir que só a desejada fique marcada)
+        # Uncheck all currently selected regions (ensure only the desired one remains checked)
         try:
             options_div = driver.find_element(
                 By.XPATH,
@@ -89,7 +89,7 @@ class Crawler:
             for cb in checkboxes:
                 try:
                     if cb.is_selected():
-                        # Clicar no label pai para desmarcar (o input pode estar oculto)
+                        # Click parent label to uncheck (input may be hidden)
                         label_el = cb.find_element(By.XPATH, "..")
                         label_el.click()
                         time.sleep(0.1)
@@ -100,7 +100,7 @@ class Crawler:
 
         time.sleep(0.2)
 
-        # Marcar somente a região desejada (title ou aria-label igual ao region)
+        # Check only the desired region (title or aria-label equal to region)
         region_escaped = region.replace("'", "\\'")
         selectors = [
             f"//div[contains(@class,'options')]//label[@title='{region_escaped}' or @aria-label='{region_escaped}']",
@@ -121,7 +121,7 @@ class Crawler:
         if not clicked:
             return
 
-        # Clicar em Apply (botão com aria-label="Apply" e class primary-btn)
+        # Click Apply (button with aria-label="Apply" and class primary-btn)
         try:
             apply_btn = wait.until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, "button[aria-label='Apply']"))
@@ -141,8 +141,8 @@ class Crawler:
 
     def _parse_price(self, price_str: str) -> float:
         """
-        Converte string de preço (ex: '11,520.00') em float.
-        Remove vírgulas; em caso de valor inválido retorna 0.0.
+        Convert price string (e.g. '11,520.00') to float.
+        Removes commas; returns 0.0 on invalid value.
         """
         if not price_str:
             return 0.0
@@ -153,9 +153,9 @@ class Crawler:
 
     def _get_table_rows(self, html: str) -> List[Tag]:
         """
-        Extrai as linhas (tr) da tabela do screener no HTML.
-        Procura div.screener-table, table.bd, tbody e retorna lista de tr.
-        Retorna lista vazia se a estrutura não for encontrada.
+        Extract table rows (tr) from the screener HTML.
+        Looks for div.screener-table, table.bd, tbody and returns list of tr.
+        Returns empty list if structure is not found.
         """
         soup = BeautifulSoup(html, "html.parser")
         div_table = soup.find_all("div", class_="screener-table yf-hm80y7")
@@ -171,9 +171,9 @@ class Crawler:
 
     def _get_total_rows(self, html: str) -> int:
         """
-        Extrai o total de linhas do div com classe 'total yf-c259ju'.
-        O texto vem no formato '1-25 of 1067'; retorna o número após ' of ' (ex: 1067).
-        Retorna 0 se não encontrar ou não conseguir fazer o parse.
+        Extract total row count from div with class 'total yf-c259ju'.
+        Text format is '1-25 of 1067'; returns the number after ' of ' (e.g. 1067).
+        Returns 0 if not found or parse fails.
         """
         soup = BeautifulSoup(html, "html.parser")
         div_total = soup.find("div", class_="total yf-c259ju")
@@ -189,9 +189,9 @@ class Crawler:
 
     def _get_rows_per_page(self, html: str) -> int:
         """
-        Extrai a quantidade de linhas por página do botão do menu (ex: 25).
-        O botão tem classe menuBtn, aria-label/title com o número e um span com o texto.
-        Retorna 0 se não encontrar ou não conseguir fazer o parse.
+        Extract rows-per-page value from the menu button (e.g. 25).
+        Button has menuBtn class, aria-label/title with the number and a span with the text.
+        Returns 0 if not found or parse fails.
         """
         soup = BeautifulSoup(html, "html.parser")
         btn = soup.find(
@@ -219,8 +219,8 @@ class Crawler:
 
     def is_last_page(self, page: int, total_rows: int, rows_per_page: int) -> bool:
         """
-        Retorna True se estamos na última página da paginação (não deve clicar em Next).
-        page é 0-based; total_rows é o total de itens; rows_per_page é quantos itens por página.
+        Return True if we are on the last pagination page (should not click Next).
+        page is 0-based; total_rows is total items; rows_per_page is items per page.
         """
         if rows_per_page <= 0:
             return True
@@ -228,8 +228,8 @@ class Crawler:
 
     def click_next_page(self, driver: webdriver.Chrome, timeout: int = 10) -> None:
         """
-        Clica no botão 'Next' da paginação do screener (Yahoo Finance).
-        Usa data-testid='next-page-button' e aria-label='Goto next page'.
+        Click the 'Next' pagination button on the screener (Yahoo Finance).
+        Uses data-testid='next-page-button' and aria-label='Goto next page'.
         """
         wait = WebDriverWait(driver, timeout)
         selectors = [
@@ -247,6 +247,14 @@ class Crawler:
             except Exception:
                 continue
 
+    def filter_region(self, driver: webdriver.Chrome, region: str) -> None:
+        """
+        Apply the region filter: open the Region menu, select the desired region and click Apply.
+        """
+        self._click_region_menu_button(driver)
+        time.sleep(1)
+        self._select_region_from_options_and_apply(driver, region)
+
     def extract(self, url: str, region: str) -> pd.DataFrame:
         """
         Fetch the URL, extract data and filter by region.
@@ -260,18 +268,14 @@ class Crawler:
         """
         driver = self._get_driver()
         driver.get(url)
-
-        # Clicar no botão "Region" (menuBtn) para abrir o menu/dropdown
-        self._click_region_menu_button(driver)
-        time.sleep(1)
-        # Selecionar a região na lista de opções (div.options) e clicar em Apply
-        self._select_region_from_options_and_apply(driver, region)
+        self.filter_region(driver, region)
 
         html = driver.page_source
         total_rows = self._get_total_rows(html)
         rows_per_page = self._get_rows_per_page(html)
         rows: list[dict] = []
         page = 0
+        
         while True:
             rows_html = self._get_table_rows(html)
             if not rows_per_page:
