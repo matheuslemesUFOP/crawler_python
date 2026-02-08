@@ -217,6 +217,23 @@ class Crawler:
                 pass
         return 0
 
+    def _parse_table_rows(self, rows_html: List[Tag]) -> list[dict]:
+        """
+        Parse table row elements (tr) into list of dicts with symbol, name, price.
+        Expects each row to have at least 5 cells; indices 1, 2, 4 are used.
+        """
+        rows: list[dict] = []
+        for tr_html in rows_html:
+            cells_html = tr_html.find_all("td")
+            if len(cells_html) < 5:
+                continue
+            symbol = cells_html[1].get_text(strip=True) or ""
+            name = cells_html[2].get_text(strip=True) or ""
+            price_str = cells_html[4].get_text(strip=True) or ""
+            price = self._parse_price(price_str)
+            rows.append({"symbol": symbol, "name": name, "price": price})
+        return rows
+
     def is_last_page(self, page: int, total_rows: int, rows_per_page: int) -> bool:
         """
         Return True if we are on the last pagination page (should not click Next).
@@ -275,20 +292,14 @@ class Crawler:
         rows_per_page = self._get_rows_per_page(html)
         rows: list[dict] = []
         page = 0
-        
+
         while True:
             rows_html = self._get_table_rows(html)
             if not rows_per_page:
                 rows_per_page = len(rows_html)
             if rows_per_page == 0:
                 break
-            for tr_html in rows_html:
-                cells_html = tr_html.find_all("td")
-                symbol = cells_html[1].get_text(strip=True) or ""
-                name = cells_html[2].get_text(strip=True) or ""
-                price_str = cells_html[4].get_text(strip=True) or ""
-                price = self._parse_price(price_str)
-                rows.append({"symbol": symbol, "name": name, "price": price})
+            rows.extend(self._parse_table_rows(rows_html))
             if self.is_last_page(page, total_rows, rows_per_page):
                 break
             self.click_next_page(driver)
